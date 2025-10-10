@@ -18,14 +18,21 @@ function initializeCodeCleaner() {
 
   const codeBlocks = document.querySelectorAll(CODE_SELECTORS);
   codeBlocks.forEach(block => {
-    // Ensure we only target blocks with significant code content
-    if (block.textContent.trim().length > 10 && !block.hasAttribute('data-ccc-processed')) {
-      // Check if the block is a child of another detected block to avoid nested buttons
-      if (block.closest(CODE_SELECTORS) !== block) return;
-
-      addCopyButton(block);
-      block.setAttribute('data-ccc-processed', 'true');
+    // --- THIS IS THE UPDATED LOGIC ---
+    // 1. Skip if this block or its parent has already been processed.
+    // This is the key fix for the double-button issue.
+    if (block.hasAttribute('data-ccc-processed') || block.closest('[data-ccc-processed]')) {
+      return;
     }
+
+    // 2. Skip if the block has very little content.
+    if (block.textContent.trim().length < 10) {
+      return;
+    }
+
+    // 3. Add the button and mark the element as processed.
+    addCopyButton(block);
+    block.setAttribute('data-ccc-processed', 'true');
   });
 }
 
@@ -205,8 +212,10 @@ function stopObserver() {
 
 // Add styles to the document head
 function injectStyles() {
+    const styleId = 'ccc-styles';
+    if (document.getElementById(styleId)) return; // Don't inject styles twice
     const style = document.createElement('style');
-    style.id = 'ccc-styles';
+    style.id = styleId;
     style.textContent = `
         .ccc-copy-button-wrapper {
             position: relative;
